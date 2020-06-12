@@ -9,3 +9,4 @@ Eshell V10.1.3  (abort with ^G)
 {ok,gui}
 2> gui:start().
 ```
+![alt text](screenshot.png "wxWidget")

@@ -55,7 +55,7 @@ handle_cast(Msg, State) ->
     {noreply,State}.
 
 init_labirinth() ->
-    labirinth:generate(49,25, 100).
+    labirinth:generate(49,25, 1000).
 
 init(Options) ->
     wx:new(Options),

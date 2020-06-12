@@ -12,7 +12,7 @@ generate(Width, _Height, _MaxIteration) when Width rem 2 =:= 0->
     {error, width_should_be_an_odd_number, Width};
 generate(_Width, Height, _MaxIteration) when Height rem 2 =:= 0->
     {error, height_should_be_an_odd_number, Height};
-generate(Width, Height, _MaxIteration) when Width < 5, Height < 5 ->
+generate(Width, Height, _MaxIteration) when Width < 5; Height < 5 ->
     {error, width_or_height_less_than_five, {Width, Height}};
 generate(_Width, _Height, MaxIteration) when MaxIteration < 0 ->
     {error, maxiteration_is_negative, MaxIteration};
@@ -41,7 +41,6 @@ get_column(#{height := Height} = Lab, Column) ->
     [get(Lab, Column, Y) || Y <- lists:seq(1, Height)].
 
 % add a horizontal wall
-% @TODO: sould get a Value to use for the wall
 horiz(Lab, Y, X, X, Value) ->
     set(Lab, X, Y, Value);
 horiz(Lab, Y, X1, X2, Value) when X1 < X2 ->
@@ -50,7 +49,6 @@ horiz(_, _,_,_,_) ->
     erlang:error("horiz: invalid X1, X2").
 
 % add a vertical wall
-% @TODO: sould get a Value to use for the wall
 vert(Lab, X, Y, Y, Value) ->
     set(Lab, X, Y, Value);
 vert(Lab, X, Y1, Y2, Value) when Y1 < Y2->
@@ -125,16 +123,16 @@ make_horiz_wall_if_possible(Lab, Row) ->
             {error, out_of_luck, RowData};
         EmptyRanges ->
             {0, Start, End} = select_randomly(EmptyRanges),
-            % place always a random length wall, length should be an even number
+            % get a random length wall which is an even number to left out a hole
             Length = rand:uniform((End - Start) div 2) * 2,
             % make a random decision to determine where the hole should be
             case rand:uniform(2) of
                 1 ->
-                    % hole at the end of the wall
-                    horiz(Lab, Row, Start, Start + Length-1, ?WALL);
+                    % make wall from left
+                    horiz(Lab, Row, Start, Start + Length - 1, ?WALL);
                 2 ->
-                    % hole at the start of the wall
-                    horiz(Lab, Row, Start + 1, Start + Length, ?WALL)
+                    % make wall from right
+                    horiz(Lab, Row, End - Length + 1, End, ?WALL)
             end
     end.
 
@@ -148,21 +146,23 @@ make_vert_wall_if_possible(Lab, Column) ->
             Length = rand:uniform((End - Start) div 2) * 2,
             case rand:uniform(2) of
                 1 ->
+                    % make wall from up
                     vert(Lab, Column, Start, Start + Length - 1, ?WALL);
                 2 ->
-                    vert(Lab, Column, Start + 1, Start + Length, ?WALL)
+                    % make wall from down
+                    vert(Lab, Column, End - Length + 1, End, ?WALL)
             end
     end.
 
 % random choose a row or column and try to place a wall
-% retruns labirint object with new wall, or {error, out_of_luck, _}
+% retruns labirinth object with new wall, or {error, out_of_luck, _}
 make_random_wall(#{height := Height, width := Width} = Lab) ->
     case rand:uniform(2) of
         1 ->
-            Row = rand:uniform((Height - 2) div 2)*2 +1,
+            Row = rand:uniform((Height - 2) div 2) * 2 + 1,
             make_horiz_wall_if_possible(Lab, Row);
         2 ->
-            Column = rand:uniform((Width - 2) div 2)*2 +1,
+            Column = rand:uniform((Width - 2) div 2) * 2 + 1,
             make_vert_wall_if_possible(Lab, Column)
     end.
 
@@ -172,9 +172,9 @@ make_walls(Lab, 0) ->
 make_walls(Lab, Iteration) ->
     case make_random_wall(Lab) of
         {error, out_of_luck, _} ->
-            make_walls(Lab, Iteration-1);
+            make_walls(Lab, Iteration - 1);
         NewLab ->
-            make_walls(NewLab, Iteration-1)
+            make_walls(NewLab, Iteration - 1)
     end.
 
 % can print out labirinth object or data
@@ -183,11 +183,11 @@ print({error, _, _} = Error)->
 print([])->
     ok;
 print([Row|Labirinth]) when is_tuple(Row)->
-    [io:format("~c", [32+X]) || X <- tuple_to_list(Row)],
+    [io:format("~2.2c", [32+X]) || X <- tuple_to_list(Row)],
     io:format("~n"),
     print(Labirinth);
 print([Row|Labirinth]) ->
-    [io:format("~c", [32+X]) || X <- Row],
+    [io:format("~2.2c", [32+X]) || X <- Row],
     io:format("~n"),
     print(Labirinth);
 print(Lab) when is_tuple(Lab) ->
